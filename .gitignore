@@ -1,0 +1,25 @@
+# System files
+.DS_Store
+
+# IDE-specific files
+.idea/
+.vscode/
+
+# Log files
+*.log
+
+functions/target/
+assets
+# Ignore dependency-reduced-pom.xml (created by Maven during shading)
+dependency-reduced-pom.xml
+
+# IDE-specific files
+*.iml
+.classpath
+.project
+.settings/
+
+# Backup and temporary files
+*.bak
+*.tmp
+~$*
