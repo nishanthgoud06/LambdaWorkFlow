@@ -6,9 +6,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.Map;
 
 public class LambdaBHandler implements RequestHandler<Map<String, Object>, String> {
@@ -17,7 +15,7 @@ public class LambdaBHandler implements RequestHandler<Map<String, Object>, Strin
         String name = (String) event.get("name");
         Integer age = (Integer) event.get("age");
 
-        if(name == null || age == null)
+        if (name == null || age == null)
             return " please you need to provide name and age";
 
         String incrementedName = name.toLowerCase();
@@ -27,6 +25,7 @@ public class LambdaBHandler implements RequestHandler<Map<String, Object>, Strin
 
         try (S3Client s3Client = S3Client.create()) {
             String bucketName = System.getenv("S3_BUCKET_NAME"); // Bucket name from environment variable
+            context.getLogger().log("Bucket Name: " + bucketName);
             String key = "data/" + incrementedName + ".json";
 
             // Prepare the S3 PutObjectRequest
@@ -41,6 +40,9 @@ public class LambdaBHandler implements RequestHandler<Map<String, Object>, Strin
             return "Successfully processed and stored data in S3: " + key;
         } catch (Exception e) {
             context.getLogger().log("Error storing data in S3: " + e.getMessage());
+            if (e.getMessage().contains("AccessDenied")) {
+                context.getLogger().log("Verify IAM permissions for this Lambda function.");
+            }
             return "Error storing data in S3.";
         }
     }
