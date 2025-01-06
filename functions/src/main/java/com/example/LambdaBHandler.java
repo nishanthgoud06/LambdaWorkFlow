@@ -7,26 +7,34 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
-public class LambdaBHandler implements RequestHandler<Map<String, Object>, String> {
+public class LambdaBHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
     @Override
-    public String handleRequest(Map<String, Object> event, Context context) {
-        String name = (String) event.get("name");
-        Integer age = (Integer) event.get("age");
+    public Map<String, Object> handleRequest(Map<String, Object> event, Context context) {
+        // Extract processed data from event
+        String processedName = (String) event.get("processedName");
+        Integer processedAge = (Integer) event.get("processedAge");
 
-        if (name == null || age == null)
-            return " please you need to provide name and age";
+        // Validate input
+        if (processedName == null || processedAge == null) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Invalid input: 'name' and 'age' are required.");
+            errorResponse.put("statusCode", 400);
+            return errorResponse;
+        }
 
-        String incrementedName = name.toLowerCase();
-        Integer incrementedAge = age + 1;
-
-        String data = String.format("{\"name\":\"%s\", \"age\":%d}", incrementedName, incrementedAge);
+        // Prepare JSON data to store in S3
+        String data = String.format("{\"name\":\"%s\", \"age\":%d}", processedName, processedAge);
 
         try (S3Client s3Client = S3Client.create()) {
-            String bucketName = System.getenv("S3_BUCKET_NAME"); // Bucket name from environment variable
+            // Fetch bucket name from environment variable
+            String bucketName = System.getenv("S3_BUCKET_NAME");
             context.getLogger().log("Bucket Name: " + bucketName);
-            String key = "data/" + incrementedName + ".json";
+
+            // Define the S3 key
+            String key = "data/" + processedName.toLowerCase() + ".json";
 
             // Prepare the S3 PutObjectRequest
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -35,15 +43,24 @@ public class LambdaBHandler implements RequestHandler<Map<String, Object>, Strin
                     .contentType("application/json")
                     .build();
 
+            // Store the JSON data in S3
             s3Client.putObject(putObjectRequest, RequestBody.fromString(data, StandardCharsets.UTF_8));
 
-            return "Successfully processed and stored data in S3: " + key;
+            context.getLogger().log("Successfully stored data in S3 with key: " + key);
+            Map<String, Object> result = new HashMap<>();
+            result.put("Message", "Successfully processed and stored data in S3: " + key);
+            result.put("statusCode", 200);
+            return result;
         } catch (Exception e) {
+            // Log and handle errors
             context.getLogger().log("Error storing data in S3: " + e.getMessage());
             if (e.getMessage().contains("AccessDenied")) {
                 context.getLogger().log("Verify IAM permissions for this Lambda function.");
             }
-            return "Error storing data in S3.";
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error storing data in S3: " + e.getMessage());
+            errorResponse.put("statusCode", 500);
+            return errorResponse;
         }
     }
 }

@@ -1,13 +1,11 @@
 import { CfnOutput, Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, EventType } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
-import { LambdaBConstruct } from './LambdaBConstruct';
-import { LambdaAConstruct } from './LambdaAConstruct';
+
 import { SNSConstruct } from './SNSConstruct';
 import { SnsDestination } from 'aws-cdk-lib/aws-s3-notifications';
 import { LambdaConstruct } from './LambdaConstruct';
 import { StepFunctionConstruct } from './StepFunctionConstruct';
-import { IFunction } from 'aws-cdk-lib/aws-lambda';
 
 export class InfraStack extends Stack {
   readonly bucket: Bucket;
@@ -21,7 +19,7 @@ export class InfraStack extends Stack {
     });
 
     const snsConstruct = new SNSConstruct(this, 'SNSConstruct', {
-      emailAddress: 'gidovi2161@matmayer.com'
+      emailAddress: 'xoxohok633@nongnue.com'
     });
 
     this.bucket.addEventNotification(
@@ -58,8 +56,7 @@ export class InfraStack extends Stack {
 
     const orchestration = new StepFunctionConstruct(this, 'Orchestration', {
       lambdaA: this.lambdaA.lambdaFunction,
-      lambdaB: this.lambdaB.lambdaFunction,
-      snsTopic: snsConstruct.topic
+      lambdaB: this.lambdaB.lambdaFunction
     })
 
     new CfnOutput(this, 'ConfirmEmail', {

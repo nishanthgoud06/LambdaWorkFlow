@@ -2,42 +2,37 @@ package com.example;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.lambda.LambdaClient;
-import software.amazon.awssdk.services.lambda.model.InvokeRequest;
-import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
-public class LambdaAHandler implements RequestHandler<Map<String, Object>, String> {
+public class LambdaAHandler implements RequestHandler<Map<String, Object>, Map<String, Object>> {
 
-    public String handleRequest(Map<String, Object> event, Context context) {
+    @Override
+    public Map<String, Object> handleRequest(Map<String, Object> event, Context context) {
+
+        context.getLogger().log("Lambda A received: " + event);
         String name = (String) event.get("name");
         Integer age = (Integer) event.get("age");
 
+        // Validate input
         if (name == null || age == null) {
-            return "Invalid input: 'name' and 'age' are required.";
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Invalid input: 'name' and 'age' are required.");
+            errorResponse.put("statusCode", 400);
+            return errorResponse;
         }
 
-        try (LambdaClient lambdaClient = LambdaClient.create()) {
-            String payload = String.format("{\"name\":\"%s\", \"age\":%d}", name, age);
+        // Process input (e.g., transform name to uppercase)
+        String processedName = name.toUpperCase();
+        int processedAge = age + 1;
 
-            InvokeRequest invokeRequest = InvokeRequest.builder()
-                    .functionName(System.getenv("LAMBDA_B_ARN")) // Lambda B ARN from environment variable
-                    .payload(SdkBytes.fromByteBuffer(StandardCharsets.UTF_8.encode(payload)))
-                    .build();
-
-            InvokeResponse response = lambdaClient.invoke(invokeRequest);
-
-            if (response.statusCode() == 200) {
-                return "Successfully invoked Lambda B. Response: " + response.payload().asUtf8String();
-            } else {
-                return "Failed to invoke Lambda B. Status Code: " + response.statusCode();
-            }
-        } catch (Exception e) {
-            context.getLogger().log("Error invoking Lambda B: " + e.getMessage());
-            return "Error invoking Lambda B.";
-        }
+        // Return processed data
+        Map<String, Object> result = new HashMap<>();
+        result.put("processedName", processedName);
+        result.put("processedAge", processedAge);
+        result.put("statusCode", 200);
+        context.getLogger().log("Lambda A processed: " + result);
+        return result;
     }
 }
