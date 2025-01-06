@@ -48,7 +48,8 @@ public class LambdaBHandler implements RequestHandler<Map<String, Object>, Map<S
 
             context.getLogger().log("Successfully stored data in S3 with key: " + key);
             Map<String, Object> result = new HashMap<>();
-            result.put("Message", "Successfully processed and stored data in S3: " + key);
+            result.put("processedName", processedName);
+            result.put("processedAge", processedAge);
             result.put("statusCode", 200);
             return result;
         } catch (Exception e) {
